@@ -8,7 +8,7 @@
 import UIKit
 
 protocol AddListViewDelegate: AnyObject {
-    func addList(_ list: TasksListModel)
+    func backToHome()
 }
 
 class AddListView: UIView {
@@ -19,9 +19,9 @@ class AddListView: UIView {
     private(set) var iconLabel = FieldLabel(title: "Icon")
     private(set) var iconSelectorView = IconSelectorView(frame: .zero, iconColor: .mainBlue)
     private(set) var addListButton = MainButton(title: "Add List", color: .mainBlue)
-    private(set) var listModel = TasksListModel()
 
-    weak var delegate: (AddListViewDelegate & BackButtonDelegate)?
+    var presenter: AddListPresenter!
+    weak var delegate: BackButtonDelegate?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -120,12 +120,7 @@ class AddListView: UIView {
 
     @objc func addListAction() {
         guard titleTextField.hasText else { return }
-
-        listModel.title = titleTextField.text
-        listModel.id = ProcessInfo().globallyUniqueString
-        listModel.icon = listModel.icon ?? "checkmark.seal.fill"
-        listModel.createdAt = Date()
-        delegate?.addList(listModel)
+        presenter.addListWithTitle(titleTextField.text!)
     }
 
     func configureCollectionView() {
@@ -144,6 +139,12 @@ class AddListView: UIView {
 
 extension AddListView: IconSelectorViewDelegate {
     func selectedIcon(_ icon: String) {
-        listModel.icon = icon
+        presenter.setListIcon(icon)
+    }
+}
+
+extension AddListView: AddListViewDelegate {
+    func backToHome() {
+        delegate?.navigateBack()
     }
 }

@@ -7,10 +7,13 @@
 
 import UIKit
 
+protocol TaskListViewControllerDelegate: AnyObject {
+    func addTask()
+}
+
 protocol TaskListViewDelegate: AnyObject {
-    func addTaskAction()
-    func updateTask(_ task: TaskModel)
-    func deleteTask(_ task: TaskModel)
+    func setPageTitle(_ title: String)
+    func reloadData()
 }
 
 class TaskListView: UIView {
@@ -21,7 +24,9 @@ class TaskListView: UIView {
     private(set) var emptyState = EmptyStateView(frame: .zero, title: "Press 'Add Task' to add your first task to the list")
     private(set) var tasks = [TaskModel]()
 
-    weak var delegate: (TaskListViewDelegate & BackButtonDelegate)?
+    var presenter: TaskListPresenter!
+
+    weak var delegate: (TaskListViewControllerDelegate & BackButtonDelegate)?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -38,11 +43,8 @@ class TaskListView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func setTasksList(_ tasksList: TasksListModel) {
-        tasks = tasksList.tasks.sorted { $0.createdAt.compare($1.createdAt) == .orderedDescending }
-        pageTitle.setTitle(tasksList.title)
-        tableView.reloadData()
-        emptyState.isHidden = tasks.count > 0
+    func setupView() {
+        presenter.setupView()
     }
 }
 
@@ -87,7 +89,7 @@ private extension TaskListView {
     }
 
     @objc func addTaskAction() {
-        delegate?.addTaskAction()
+        delegate?.addTask()
     }
 
     func configureTableView() {
@@ -126,12 +128,12 @@ extension TaskListView: UITableViewDelegate, UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return tasks.count
+        return presenter.numberOfTasks
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: TaskCell.reuseId, for: indexPath) as! TaskCell
-        cell.setParametersForTask(tasks[indexPath.row])
+        cell.setParametersForTask(presenter.taskAtIndex(indexPath.row))
         cell.delegate = self
         return cell
     }
@@ -142,16 +144,25 @@ extension TaskListView: UITableViewDelegate, UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            let task = tasks[indexPath.row]
-            tasks.remove(at: indexPath.row)
+            presenter.removeTaskAtIndex(indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .automatic)
-            delegate?.deleteTask(task)
         }
     }
 }
 
 extension TaskListView: TaskCellDelegate {
     func updateTask(_ task: TaskModel) {
-        delegate?.updateTask(task)
+        presenter.updateTask(task)
+    }
+}
+
+extension TaskListView: TaskListViewDelegate {
+    func setPageTitle(_ title: String) {
+        pageTitle.text = title
+    }
+
+    func reloadData() {
+        tableView.reloadData()
+        emptyState.isHidden = presenter.numberOfTasks > 0
     }
 }

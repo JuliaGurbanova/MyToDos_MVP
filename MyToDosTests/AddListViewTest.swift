@@ -10,6 +10,7 @@ import XCTest
 
 final class AddListViewTest: XCTestCase {
     var sut: AddListView!
+    var presenter: AddListPresenter!
 
     override func setUpWithError() throws {
         sut = AddListView()
@@ -56,13 +57,19 @@ final class AddListViewTest: XCTestCase {
     }
 
     func testTextField_whenTextFieldHasTextShouldBeCreatedList() {
+        let mockTaskListService = MockTaskListService(lists: [TasksListModel]())
+        presenter = AddListPresenter(addListView: sut, tasksListService: mockTaskListService)
+        sut.presenter = presenter
         sut.titleTextField.text = "Test title"
         sut.addListAction()
-        XCTAssertEqual(sut.listModel.title, "Test title")
+        XCTAssertEqual(presenter.list.title, "Test title")
     }
 
     func testIcon_whenIconIsSetShouldBeIconInList() {
+        let mockTaskListService = MockTaskListService(lists: [TasksListModel]())
+        presenter = AddListPresenter(addListView: sut, tasksListService: mockTaskListService)
+        sut.presenter = presenter
         sut.selectedIcon("test.icon")
-        XCTAssertEqual(sut.listModel.icon, "test.icon")
+        XCTAssertEqual(presenter.list.icon, "test.icon")
     }
 }

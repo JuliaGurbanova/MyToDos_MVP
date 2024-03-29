@@ -10,18 +10,22 @@ import XCTest
 
 final class HomeViewTest: XCTestCase {
     var sut: HomeView!
+    var presenter: HomePresenter!
+    let taskList = TasksListModel(
+        id: "12345-67890",
+        title: "Test List",
+        icon: "test.icon",
+        tasks: [TaskModel](),
+        createdAt: Date()
+    )
 
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
         sut = HomeView()
-        let list = TasksListModel(
-            id: "12345-67890",
-            title: "Test List",
-            icon: "test.icon",
-            tasks: [TaskModel](),
-            createdAt: Date()
-        )
-        sut.setTasksLists([list])
+        let mockTaskListService = MockTaskListService(lists: [taskList])
+        presenter = HomePresenter(homeView: sut, tasksListService: mockTaskListService)
+        sut.presenter = presenter
+        presenter.fetchTasksLists()
+        sut.reloadData()
     }
 
     override func tearDownWithError() throws {
@@ -53,7 +57,11 @@ final class HomeViewTest: XCTestCase {
     }
 
     func testTableView_whenModelHasZeroListShouldBeEmptyState() {
-        sut.setTasksLists([TasksListModel]())
+        let mockTaskListService = MockTaskListService(lists: [TasksListModel]())
+        presenter = HomePresenter(homeView: sut, tasksListService: mockTaskListService)
+        sut.presenter = presenter
+        presenter.fetchTasksLists()
+        sut.reloadData()
         XCTAssertFalse(sut.emptyState.isHidden)
     }
 
@@ -70,6 +78,6 @@ final class HomeViewTest: XCTestCase {
     func testTableView_whenListIsDeletedShouldBeNoneOnModel() {
         let indexPath = IndexPath(row: 0, section: 0)
         sut.tableView.dataSource?.tableView?(sut.tableView, commit: .delete, forRowAt: indexPath)
-        XCTAssertEqual(sut.tasksList.count, 0)
+        XCTAssertEqual(sut.presenter.numberOfTaskLists, 0)
     }
 }
